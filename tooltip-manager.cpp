@@ -70,9 +70,10 @@ ToolTipManager::~ToolTipManager()
 ToolTipManager::ToolTipManager(QWidget* parent)
     : QWidget{parent}, mMainLayout(new QVBoxLayout), mMainTimer(new QTimer)
 {
-    setWindowFlags(Qt::FramelessWindowHint);
+    setWindowFlags(Qt::FramelessWindowHint | Qt::Tool);
     setAttribute(Qt::WA_TranslucentBackground);
-    setAttribute(Qt::WA_X11NetWmWindowTypeNotification);
+    setAttribute(Qt::WA_TransparentForMouseEvents);
+    // setAttribute(Qt::WA_X11NetWmWindowTypeNotification);
     setStyleSheet("background-color: transparent;");
     mMainLayout->setSpacing(TIP_HIGHT_GAP);
     mMainLayout->setContentsMargins(0, 0, 0, 0);
@@ -138,16 +139,24 @@ TipWidget::TipWidget(const QString& msg, QWidget* parent)
 }
 
 TipWrap::TipWrap(const QString &msg, QWidget *parent)
-    : QWidget(parent), mWidget(new TipWidget(msg, parent)), mTotalSec(30)
+    : QWidget(parent), mWidget(new TipWidget(msg, parent)), mTotalSec(300)
 {
     setContentsMargins(6, 6, 6, 6);
     setFixedSize(TIP_WIDGET_WIDTH, TIP_WIDGET_WIDTH * 0.6);
     setAttribute(Qt::WA_StyledBackground);
-    setStyleSheet("background-color: rgba(255,255,255,1);");
+    setStyleSheet("background-color: rgba(255,255,255,1); color: rgba(0,0,0,1);");
 
     auto layout = new QVBoxLayout;
     auto l2 = new QHBoxLayout;
     auto cancel = new QPushButton;
+    cancel->setText(tr("Close"));
+    cancel->setContentsMargins(9, 9, 9, 9);
+    cancel->setAttribute(Qt::WA_StyledBackground);
+    cancel->setStyleSheet("QPushButton {"
+                          " background-color: rgba(255,255,255,1);"
+                          " color: rgba(0,0,0,1);"
+                          " border: 1px solid #a8a8a8;"
+                          "}");
 
     connect (cancel, &QPushButton::clicked, this, [=] (bool) { Q_EMIT closeTip(); });
 
