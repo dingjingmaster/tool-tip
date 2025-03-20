@@ -8,11 +8,23 @@ class ToolTipManager;
 class TipWidget : public QLabel
 {
     Q_OBJECT
-    friend class ToolTipManager;
 public:
     explicit TipWidget(const QString& msg, QWidget* parent=nullptr);
+};
+
+class TipWrap : public QWidget
+{
+    Q_OBJECT
+    friend class ToolTipManager;
+public:
+    explicit TipWrap(const QString& msg, QWidget* parent=nullptr);
+
+Q_SIGNALS:
+    void closeTip();
+
 
 private:
+    TipWidget*                          mWidget = nullptr;
     qint32                              mCurrentSec = 0;
     qint32                              mTotalSec;
 };
@@ -31,6 +43,7 @@ private:
     explicit ToolTipManager(QWidget* parent = nullptr);
 
 private Q_SLOTS:
+    void closeTip(std::shared_ptr<TipWrap> tip);
     void checkTipWidgets();
 
 protected:
@@ -42,7 +55,7 @@ private:
     QRect                               mMainPos;
     QTimer*                             mMainTimer = nullptr;
     QLayout*                            mMainLayout = nullptr;
-    QList<std::shared_ptr<TipWidget>>   mMainWidgets;
+    QList<std::shared_ptr<TipWrap>>     mMainWidgets;
 };
 
 

@@ -5,6 +5,7 @@
 #include <QTimer>
 #include <QWidget>
 #include <QScreen>
+#include <QPushButton>
 #include <QVBoxLayout>
 #include <QGuiApplication>
 
@@ -41,7 +42,15 @@ void ToolTipManager::showMessage(QString msg)
         return;
     }
 
-    auto w = std::make_shared<TipWidget>(msg);
+    auto w = std::make_shared<TipWrap>(msg);
+    w.get()->connect (w.get(), &TipWrap::closeTip, this, [=] () {
+        for (auto& it : mMainWidgets) {
+            if (it.get() == sender()) {
+                closeTip(it);
+                break;
+            }
+        }
+    });
     mMainLayout->addWidget(w.get());
     mMainWidgets.append(w);
     checkTipWidgets();
@@ -79,17 +88,14 @@ ToolTipManager::ToolTipManager(QWidget* parent)
     mMainPos.setWidth(TIP_WIDGET_WIDTH);
     mMainPos.setHeight(br.y() - tl.y() - 10);
 
-    mMaxTip = (mMainPos.height() - 10) / (TIP_WIDGET_WIDTH * 0.6 + TIP_HIGHT_GAP) - 1;
-    qInfo() << mMaxTip;
+    mMaxTip = (mMainPos.height() - 10) / (TIP_WIDGET_WIDTH * 0.6 + TIP_HIGHT_GAP);
 
     connect (mMainTimer, &QTimer::timeout, this, [=] () {
         checkTipWidgets();
         for (auto& w : mMainWidgets) {
             ++w->mCurrentSec;
             if (w->mCurrentSec >= w->mTotalSec) {
-                w->hide();
-                mMainLayout->removeWidget(w.get());
-                mMainWidgets.removeOne(w);
+                closeTip(w);
             }
         }
 
@@ -101,13 +107,19 @@ ToolTipManager::ToolTipManager(QWidget* parent)
     mMainTimer->setInterval(1000);
 }
 
+void ToolTipManager::closeTip(std::shared_ptr<TipWrap> tip)
+{
+    tip->hide();
+    mMainLayout->removeWidget(tip.get());
+    mMainWidgets.removeOne(tip);
+}
+
 void ToolTipManager::checkTipWidgets()
 {
     auto all = mMainWidgets.count() - mMaxTip;
     for (int idx = 0; idx < all; ++idx) {
-        mMainLayout->removeWidget(mMainWidgets.at(idx).get());
-        mMainWidgets.at(idx)->hide();
-        mMainWidgets.removeAt(idx);
+        auto it = mMainWidgets.at(idx);
+        closeTip(it);
     }
 }
 
@@ -117,15 +129,32 @@ void ToolTipManager::showEvent(QShowEvent *event)
 }
 
 TipWidget::TipWidget(const QString& msg, QWidget* parent)
-    : QLabel(parent), mTotalSec(3)
+    : QLabel(parent)
+{
+    setText(msg);
+    setWordWrap(true);
+    setOpenExternalLinks(true);
+    setTextFormat(Qt::RichText);
+}
+
+TipWrap::TipWrap(const QString &msg, QWidget *parent)
+    : QWidget(parent), mWidget(new TipWidget(msg, parent)), mTotalSec(30)
 {
     setContentsMargins(6, 6, 6, 6);
     setFixedSize(TIP_WIDGET_WIDTH, TIP_WIDGET_WIDTH * 0.6);
     setAttribute(Qt::WA_StyledBackground);
     setStyleSheet("background-color: rgba(255,255,255,1);");
 
-    setText(msg);
-    setWordWrap(true);
-    setOpenExternalLinks(true);
-    setTextFormat(Qt::RichText);
+    auto layout = new QVBoxLayout;
+    auto l2 = new QHBoxLayout;
+    auto cancel = new QPushButton;
+
+    connect (cancel, &QPushButton::clicked, this, [=] (bool) { Q_EMIT closeTip(); });
+
+    layout->addWidget(mWidget);
+    l2->addStretch();
+    l2->addWidget(cancel);
+    l2->addStretch();
+    layout->addLayout(l2);
+    setLayout(layout);
 }
