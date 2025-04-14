@@ -47,7 +47,7 @@ private Q_SLOTS:
     void checkTipWidgets();
 
 protected:
-    void showEvent(QShowEvent *event);
+    void resizeEvent(QResizeEvent *event);
 
 private:
     qint32                              mMaxTip;

@@ -84,12 +84,14 @@ ToolTipManager::ToolTipManager(QWidget* parent)
     auto tl = rect.topLeft();
     auto br = rect.bottomRight();
 
+    setFixedWidth(TIP_WIDGET_WIDTH);
+    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+
     mMainPos.setX(br.x() - TIP_WIDGET_WIDTH - 3);
     mMainPos.setY(tl.y());
     mMainPos.setWidth(TIP_WIDGET_WIDTH);
-    mMainPos.setHeight(br.y() - tl.y() - 10);
 
-    mMaxTip = (mMainPos.height() - 10) / (TIP_WIDGET_WIDTH * 0.6 + TIP_HIGHT_GAP);
+    mMaxTip = (br.y() - tl.y() - 20) / (TIP_WIDGET_WIDTH * 0.6 + TIP_HIGHT_GAP);
 
     connect (mMainTimer, &QTimer::timeout, this, [=] () {
         checkTipWidgets();
@@ -113,6 +115,7 @@ void ToolTipManager::closeTip(std::shared_ptr<TipWrap> tip)
     tip->hide();
     mMainLayout->removeWidget(tip.get());
     mMainWidgets.removeOne(tip);
+    resize(0, 0);
 }
 
 void ToolTipManager::checkTipWidgets()
@@ -124,8 +127,17 @@ void ToolTipManager::checkTipWidgets()
     }
 }
 
-void ToolTipManager::showEvent(QShowEvent *event)
+void ToolTipManager::resizeEvent(QResizeEvent *event)
 {
+    auto rect = qApp->primaryScreen()->availableGeometry();
+    auto br = rect.bottomRight();
+
+    int w = (mMainLayout->count() - 1) * (TIP_WIDGET_WIDTH * 0.6 + TIP_HIGHT_GAP);
+
+    qInfo() << "c: " << mMainLayout->count() - 1 << " h: " << height() << " w: " << width();
+
+    mMainPos.setHeight(w);
+    mMainPos.setY(br.y() - w - 10);
     setGeometry(mMainPos);
 }
 

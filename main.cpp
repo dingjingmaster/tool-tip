@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    int tim = 200;
+    int tim = 6000;
     QTimer tm;
     tm.connect(&tm, &QTimer::timeout, [&] () {
         static int i = 60;
