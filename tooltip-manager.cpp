@@ -140,6 +140,7 @@ void ToolTipManager::resizeEvent(QResizeEvent *event)
     mMainPos.setHeight(w);
     mMainPos.setY(br.y() - w - 10);
     setGeometry(mMainPos);
+    Q_UNUSED(event);
 }
 
 TipWidget::TipWidget(const QString& msg, QWidget* parent)
