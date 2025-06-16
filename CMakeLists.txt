@@ -36,6 +36,7 @@ else()
     else()
         add_executable(tool-tip
             ${PROJECT_SOURCES}
+            res.qrc
         )
     endif()
 endif()

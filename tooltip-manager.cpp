@@ -8,6 +8,8 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QGuiApplication>
+#include <QPainter>
+#include <QMouseEvent>
 
 #define TIP_HIGHT_GAP           10
 #define TIP_WIDGET_WIDTH        300
@@ -73,7 +75,6 @@ ToolTipManager::ToolTipManager(QWidget* parent)
     setWindowFlags(Qt::FramelessWindowHint | Qt::Tool);
     setAttribute(Qt::WA_TranslucentBackground);
     setAttribute(Qt::WA_TransparentForMouseEvents);
-    // setAttribute(Qt::WA_X11NetWmWindowTypeNotification);
     setStyleSheet("background-color: transparent;");
     mMainLayout->setSpacing(TIP_HIGHT_GAP);
     mMainLayout->setContentsMargins(0, 0, 0, 0);
@@ -144,6 +145,7 @@ void ToolTipManager::resizeEvent(QResizeEvent *event)
 TipWidget::TipWidget(const QString& msg, QWidget* parent)
     : QLabel(parent)
 {
+    setContentsMargins(8, 8, 8, 3);
     setText(msg);
     setWordWrap(true);
     setOpenExternalLinks(true);
@@ -153,24 +155,41 @@ TipWidget::TipWidget(const QString& msg, QWidget* parent)
 TipWrap::TipWrap(const QString &msg, QWidget *parent)
     : QWidget(parent), mWidget(new TipWidget(msg, parent)), mTotalSec(300)
 {
-    setContentsMargins(6, 6, 6, 6);
+    setContentsMargins(0, 0, 0, 12);
     setFixedSize(TIP_WIDGET_WIDTH, TIP_WIDGET_WIDTH * 0.6);
     setAttribute(Qt::WA_StyledBackground);
     setStyleSheet("background-color: rgba(255,255,255,1); color: rgba(0,0,0,1);");
 
+    mHeader = new TipHeader;
+
     auto layout = new QVBoxLayout;
+    layout->setContentsMargins(0, 0, 0, 0);
+
+    layout->addWidget(mHeader);
     auto l2 = new QHBoxLayout;
     auto cancel = new QPushButton;
-    cancel->setText(tr("Close"));
-    cancel->setContentsMargins(9, 9, 9, 9);
+    QString str(tr("Close"));
+    QFont f = font();
+    f.setBold(true);
+    cancel->setFont(f);
+    cancel->setText(str);
+    cancel->setCursor(Qt::PointingHandCursor);
     cancel->setAttribute(Qt::WA_StyledBackground);
     cancel->setStyleSheet("QPushButton {"
-                          " background-color: rgba(255,255,255,1);"
-                          " color: rgba(0,0,0,1);"
+                          " border: none;"
+                          " outline: none;"
+                          " border-radius: 5px;"
+                          " padding: 1px 6px 1px 6px;"
                           " border: 1px solid #a8a8a8;"
-                          "}");
+                          " color: rgba(255,255,255,255);"
+                          " background-color: rgba(28,167,217,255);"
+                          "}"
+                          "");
+    cancel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+    cancel->adjustSize();
 
     connect (cancel, &QPushButton::clicked, this, [=] (bool) { Q_EMIT closeTip(); });
+    connect (mHeader, &TipHeader::close, this, &TipWrap::closeTip);
 
     layout->addWidget(mWidget);
     l2->addStretch();
@@ -178,4 +197,84 @@ TipWrap::TipWrap(const QString &msg, QWidget *parent)
     l2->addStretch();
     layout->addLayout(l2);
     setLayout(layout);
+}
+
+TipHeader::TipHeader(QWidget *parent)
+    : QWidget(parent)
+{
+    setMouseTracking(true);
+    setContentsMargins(0, 0, 0, 0);
+    setFixedHeight(42);
+    mTitle = QString(tr("Process approval"));
+}
+
+void TipHeader::paintEvent(QPaintEvent *e)
+{
+    int h = height();
+    int w = width();
+
+    QPainter p(this);
+    p.save();
+    p.fillRect(rect(), QColor(28, 167, 217));
+    p.restore();
+
+    p.save();
+    QPen pen = p.pen();
+    pen.setColor(Qt::white);
+    p.setPen(pen);
+    QFont f = font();
+    f.setBold(true);
+    QFontMetrics fm(f);
+    int fh = fm.height();
+    QRect title = rect();
+    title.setX(8);
+    title.setY((h - fh) / 2);
+    title.setHeight(fh);
+    title.setWidth(fm.horizontalAdvance(mTitle));
+    p.drawText(title, Qt::AlignCenter, mTitle);
+    p.restore();
+
+    p.save();
+    QRect cls = rect();
+    cls.setX(w - 24);
+    cls.setY((h - 16) / 2);
+    cls.setHeight(16);
+    cls.setWidth(16);
+    p.drawImage(cls, QImage(":/data/icons/close.png"));
+    p.restore();
+
+    qDebug() << "w: " << width() << ", h: " << height() << ", fm.h: " << fh;
+}
+
+void TipHeader::mouseMoveEvent(QMouseEvent *e)
+{
+    int h = height();
+    int w = width();
+
+    QRect cls = rect();
+    cls.setX(w - 24);
+    cls.setY((h - 16) / 2);
+    cls.setHeight(16);
+    cls.setWidth(16);
+    if (cls.contains(e->pos())) {
+        setCursor(Qt::PointingHandCursor);
+    }
+    else {
+        setCursor(Qt::ArrowCursor);
+    }
+}
+
+void TipHeader::mousePressEvent(QMouseEvent *e)
+{
+    int h = height();
+    int w = width();
+
+    QRect cls = rect();
+    cls.setX(w - 24);
+    cls.setY((h - 16) / 2);
+    cls.setHeight(16);
+    cls.setWidth(16);
+    if (cls.contains(e->pos())) {
+        Q_EMIT close();
+    }
 }

@@ -3,6 +3,27 @@
 
 #include <QLabel>
 #include <QObject>
+#include <QPushButton>
+
+
+class TipHeader : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit TipHeader(QWidget* parent=nullptr);
+
+protected:
+    void paintEvent(QPaintEvent* e) override;
+    void mouseMoveEvent(QMouseEvent* e) override;
+    void mousePressEvent(QMouseEvent* e) override;
+
+Q_SIGNALS:
+    void close();
+
+private:
+    QString                             mTitle = nullptr;
+    QPushButton*                        mClose = nullptr;
+};
 
 class ToolTipManager;
 class TipWidget : public QLabel
@@ -24,6 +45,7 @@ Q_SIGNALS:
 
 
 private:
+    TipHeader*                          mHeader = nullptr;
     TipWidget*                          mWidget = nullptr;
     qint32                              mCurrentSec = 0;
     qint32                              mTotalSec;
