@@ -180,7 +180,7 @@ TipWrap::TipWrap(const QString &msg, QWidget *parent)
                           " border: none;"
                           " outline: none;"
                           " border-radius: 5px;"
-                          " padding: 1px 6px 1px 6px;"
+                          " padding: 6px 6px 6px 6px;"
                           " border: 1px solid #a8a8a8;"
                           " color: rgba(255,255,255,255);"
                           " background-color: rgba(28,167,217,255);"
@@ -193,6 +193,7 @@ TipWrap::TipWrap(const QString &msg, QWidget *parent)
     connect (mHeader, &TipHeader::close, this, &TipWrap::closeTip);
 
     layout->addWidget(mWidget);
+    layout->addStretch();
     l2->addStretch();
     l2->addWidget(cancel);
     l2->addStretch();
